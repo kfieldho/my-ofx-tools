@@ -2,6 +2,8 @@ import argparse
 import ConfigParser
 import pushover
 import json
+import dateutil
+import dateutil.parser
 
 test_message = '''
 CK: 1467.23 <font color="red">142.75</font> <font color="green">200.00</font>
@@ -17,8 +19,17 @@ def format_delta_with_color(delta):
     return '<font color="%s">%.2f</font>'%(color,delta)
 
 
-def format_report_line(label,current_balance,last_balance,first_balance):
-    return "%s: %.2f %s %s"%(label,current_balance,format_delta_with_color(current_balance - last_balance),format_delta_with_color(current_balance - first_balance))
+def format_report_line(label,current_balance,last_balance,anchor_balance):
+    return "%s: %.2f %s %s"%(label,current_balance,format_delta_with_color(current_balance - last_balance),format_delta_with_color(current_balance - anchor_balance))
+
+def get_anchor_balance(json_banking_data,account,anchor_date):
+
+    for bank_data in json_banking_data:
+        bank_data_date = dateutil.parser.parse(bank_data['datetime']).date()
+        if bank_data_date >= anchor_date:
+            return float(bank_data['accounts'][account]['balance'])
+
+    return float(json_banking_data[0]['accounts'][account]['balance'])
 
 def main():
     message = ""
@@ -35,6 +46,8 @@ def main():
 
     push = pushover.PushOver(app_id,group_id)
 
+    anchor_date = dateutil.parser.parse(config.get('banking','anchor_date')).date()
+
     json_banking_data_filename = config.get('banking','current_json')
     with open(json_banking_data_filename) as json_banking_data_file:
         json_banking_data = json.load(json_banking_data_file)
@@ -43,8 +56,8 @@ def main():
         label = config.get(account,'label')
         current_balance = float(json_banking_data[-1]['accounts'][account]['balance'])
         last_balance = float(json_banking_data[-2]['accounts'][account]['balance'])
-        first_balance = float(json_banking_data[0]['accounts'][account]['balance'])
-        message = message + format_report_line(label,current_balance,last_balance,first_balance) + "\n"
+        anchor_balance = get_anchor_balance(json_banking_data,account,anchor_date)
+        message = message + format_report_line(label,current_balance,last_balance,anchor_balance) + "\n"
 
     push.sendmsg(message,title="Mr Banks Update",html=1)
     #print message
