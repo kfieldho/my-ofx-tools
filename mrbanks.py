@@ -4,6 +4,7 @@ import pushover
 import json
 import dateutil
 import dateutil.parser
+import pprint
 
 test_message = '''
 CK: 1467.23 <font color="red">142.75</font> <font color="green">200.00</font>
@@ -51,9 +52,13 @@ def main():
     json_banking_data_filename = config.get('banking','current_json')
     with open(json_banking_data_filename) as json_banking_data_file:
         json_banking_data = json.load(json_banking_data_file)
-
+    #pprint.pprint(json_banking_data)
     for account in config.get('banking','accounts').split(' '):
         label = config.get(account,'label')
+
+        if config.has_option(account,'anchor_date'):
+            anchor_date = dateutil.parser.parse(config.get(account,'anchor_date')).date()
+
         current_balance = float(json_banking_data[-1]['accounts'][account]['balance'])
         last_balance = float(json_banking_data[-2]['accounts'][account]['balance'])
         anchor_balance = get_anchor_balance(json_banking_data,account,anchor_date)
