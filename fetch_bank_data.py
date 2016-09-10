@@ -68,7 +68,9 @@ if __name__ == "__main__":
         accounts.append(account)
 
     if not args.test_ofx:
+        print "Downloading accounts ",accounts
         ofx_data = ofxclient.util.combined_download(accounts)
+        print "Download completed"
         save_ofx_data(ofx_data,args.work_dir)
     else:
         with open(args.test_ofx,'rb') as test_ofx_file:
