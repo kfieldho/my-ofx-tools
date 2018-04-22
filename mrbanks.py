@@ -37,6 +37,7 @@ def main():
 
     parser = argparse.ArgumentParser(description='Update banking information')
     parser.add_argument('--config',required=True,help="Configuration file")
+    parser.add_argument('--account',default=None,required=False,help="Account to process")
     args = parser.parse_args()
 
     config = ConfigParser.RawConfigParser()
@@ -53,7 +54,12 @@ def main():
     with open(json_banking_data_filename) as json_banking_data_file:
         json_banking_data = json.load(json_banking_data_file)
     #pprint.pprint(json_banking_data)
-    for account in config.get('banking','accounts').split(' '):
+    if not args.account is None:
+        account_list = [ args.account ]
+    else:
+        account_list = config.get('banking','accounts').split(' ')
+
+    for account in account_list:
         label = config.get(account,'label')
 
         if config.has_option(account,'anchor_date'):
