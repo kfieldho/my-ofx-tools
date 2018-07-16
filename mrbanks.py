@@ -53,7 +53,7 @@ def main():
     json_banking_data_filename = config.get('banking','current_json')
     with open(json_banking_data_filename) as json_banking_data_file:
         json_banking_data = json.load(json_banking_data_file)
-    #pprint.pprint(json_banking_data)
+    pprint.pprint(json_banking_data)
     if not args.account is None:
         account_list = [ args.account ]
     else:
@@ -65,10 +65,12 @@ def main():
         if config.has_option(account,'anchor_date'):
             anchor_date = dateutil.parser.parse(config.get(account,'anchor_date')).date()
 
-        current_balance = float(json_banking_data[-1]['accounts'][account]['balance'])
-        last_balance = float(json_banking_data[-2]['accounts'][account]['balance'])
-        anchor_balance = get_anchor_balance(json_banking_data,account,anchor_date)
-        message = message + format_report_line(label,current_balance,last_balance,anchor_balance) + "\n"
+        # Check that we have the account in today and yesterday
+        if (account in json_banking_data[-1]['accounts']) and (account in json_banking_data[-2]['accounts']):
+            current_balance = float(json_banking_data[-1]['accounts'][account]['balance'])
+            last_balance = float(json_banking_data[-2]['accounts'][account]['balance'])
+            anchor_balance = get_anchor_balance(json_banking_data,account,anchor_date)
+            message = message + format_report_line(label,current_balance,last_balance,anchor_balance) + "\n"
 
     push.sendmsg(message,title="Mr Banks Update",html=1)
     #print message
